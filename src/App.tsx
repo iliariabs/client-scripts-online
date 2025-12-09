@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { useLocation, BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useLocation, useNavigate, BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Header } from './components/layout/Header';
 import { Sidebar } from './components/layout/Sidebar';
 import { SettingsModal } from './components/layout/SettingsModal';
@@ -11,7 +11,7 @@ import { useTheme } from './hooks/useTheme';
 import { LANGUAGES, getLanguageById, type Language } from './data/languages';
 import { useSavedCodes } from './hooks/useSavedCodes';
 
-const BASE_PATH = '/client-scripts-online';
+const BASE_PATH = '/client-scripts-online/';
 
 function AppContent() {
   const { theme, toggle: toggleTheme } = useTheme();
@@ -33,6 +33,7 @@ function AppContent() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [inputPrompt, setInputPrompt] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const resolveInputRef = useRef<((value: string) => void) | null>(null);
   const editorRef = useRef<EditorRef>(null);
@@ -60,7 +61,7 @@ function AppContent() {
 
     setOutput('> Ready...\n');
 
-    window.history.replaceState(null, '', '/' + lang.id);
+    navigate('/' + lang.id, { replace: true });
   };
 
   useEffect(() => {
@@ -183,14 +184,15 @@ function AppContent() {
   );
 }
 
-
 export default function App() {
+  const defaultRedirect = `/${LANGUAGES[0].id}`;
+
   return (
     <BrowserRouter basename={BASE_PATH}>
       <Routes>
-        <Route path="/" element={<Navigate to={`/${LANGUAGES[0].id}`} replace />} />
+        <Route path="/" element={<Navigate to={defaultRedirect} replace />} />
         <Route path="/:langId" element={<AppContent />} />
-        <Route path="*" element={<Navigate to={`/${LANGUAGES[0].id}`} replace />} />
+        <Route path="*" element={<Navigate to={defaultRedirect} replace />} />
       </Routes>
     </BrowserRouter>
   );

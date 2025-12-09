@@ -25,7 +25,7 @@ export const useSyntaxWorker = (code: string, languageId: string) => {
 
     workerRef.current.postMessage({ 
       type: 'INIT', 
-      wasmBaseUrl: '/wasm/' 
+      wasmBaseUrl: import.meta.env.BASE_URL + 'wasm/'
     });
 
     return () => {

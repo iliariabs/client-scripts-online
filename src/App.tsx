@@ -1,5 +1,4 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { useLocation, useNavigate, BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Header } from './components/layout/Header';
 import { Sidebar } from './components/layout/Sidebar';
 import { SettingsModal } from './components/layout/SettingsModal';
@@ -11,57 +10,43 @@ import { useTheme } from './hooks/useTheme';
 import { LANGUAGES, getLanguageById, type Language } from './data/languages';
 import { useSavedCodes } from './hooks/useSavedCodes';
 
-const BASE_PATH = '/client-scripts-online/';
+const SESSION_LANGUAGE_KEY = 'selected-language';
 
-function AppContent() {
+export default function App() {
   const { theme, toggle: toggleTheme } = useTheme();
-  const location = useLocation();
 
-  const langIdFromUrl = location.pathname.slice(1);
-  const defaultLanguage = getLanguageById(langIdFromUrl) || LANGUAGES[0];
+  const savedLangId = sessionStorage.getItem(SESSION_LANGUAGE_KEY);
+  const savedLanguage = savedLangId ? getLanguageById(savedLangId) : null;
+  const initialLanguage = savedLanguage || LANGUAGES[0];
 
-  const [currentLanguage, setCurrentLanguage] = useState<Language>(defaultLanguage);
+  const [currentLanguage, setCurrentLanguage] = useState<Language>(initialLanguage);
 
   const {
     initialCode,
     loadCodeForLanguage,
     saveCodeForCurrentLanguage
-  } = useSavedCodes(currentLanguage, defaultLanguage);
+  } = useSavedCodes(currentLanguage, initialLanguage);
 
   const [code, setCode] = useState(initialCode);
   const [output, setOutput] = useState('> Ready...\n');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [inputPrompt, setInputPrompt] = useState<string | null>(null);
-  const navigate = useNavigate();
 
   const resolveInputRef = useRef<((value: string) => void) | null>(null);
   const editorRef = useRef<EditorRef>(null);
 
   useEffect(() => {
-    const lang = getLanguageById(langIdFromUrl);
-
-    if (lang && lang.id !== currentLanguage.id && !isRunning) {
-      setCurrentLanguage(lang);
-
-      const loaded = loadCodeForLanguage(lang);
-      setCode(loaded);
-
-      setOutput('> Ready...\n');
-    }
-  }, [langIdFromUrl]);
+    sessionStorage.setItem(SESSION_LANGUAGE_KEY, currentLanguage.id);
+  }, [currentLanguage]);
 
   const handleLanguageChange = (lang: Language) => {
-    if (isRunning) return;
+    if (isRunning || lang.id === currentLanguage.id) return;
 
     setCurrentLanguage(lang);
-
     const loaded = loadCodeForLanguage(lang);
     setCode(loaded);
-
     setOutput('> Ready...\n');
-
-    navigate('/' + lang.id, { replace: true });
   };
 
   useEffect(() => {
@@ -125,10 +110,9 @@ function AppContent() {
       e.preventDefault();
       e.returnValue = '';
     };
-
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  });
+  }, []);
 
   return (
     <div className={`min-h-screen w-screen flex flex-col overflow-hidden ${baseClasses}`}>
@@ -140,14 +124,12 @@ function AppContent() {
         toggleTheme={toggleTheme}
         currentLanguage={currentLanguage}
       />
-
       <div className="flex flex-1 overflow-hidden">
         <Sidebar
           theme={theme}
           selectedLanguage={currentLanguage}
           onLanguageChange={handleLanguageChange}
         />
-
         <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
           <div className="flex-1 relative overflow-hidden">
             <CodeEditor
@@ -158,7 +140,6 @@ function AppContent() {
               languageId={currentLanguage.id}
             />
           </div>
-
           <div
             className="overflow-hidden border-t border-gray-700"
             style={{ height: '240px', minHeight: '120px', maxHeight: '80vh' }}
@@ -174,26 +155,11 @@ function AppContent() {
           </div>
         </div>
       </div>
-
       <SettingsModal
         isOpen={settingsOpen}
         onClose={() => setSettingsOpen(false)}
         theme={theme}
       />
     </div>
-  );
-}
-
-export default function App() {
-  const defaultRedirect = `/${LANGUAGES[0].id}`;
-
-  return (
-    <BrowserRouter basename={BASE_PATH}>
-      <Routes>
-        <Route path="/" element={<Navigate to={defaultRedirect} replace />} />
-        <Route path="/:langId" element={<AppContent />} />
-        <Route path="*" element={<Navigate to={defaultRedirect} replace />} />
-      </Routes>
-    </BrowserRouter>
   );
 }

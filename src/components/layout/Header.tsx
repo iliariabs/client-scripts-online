@@ -28,7 +28,7 @@ export const Header: React.FC<HeaderProps> = ({
       }`}
     >
       <div className="flex items-center gap-4">
-        <h1 className="text-xl font-bold">Online Interpreter</h1>
+        <h1 className="text-xl font-bold">Clientside Script</h1>
         
         <div className="flex items-center gap-2 text-sm font-medium opacity-75">
           <span>{currentLanguage.name}</span>

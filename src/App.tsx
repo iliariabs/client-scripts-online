@@ -11,6 +11,8 @@ import { useTheme } from './hooks/useTheme';
 import { LANGUAGES, getLanguageById, type Language } from './data/languages';
 import { useSavedCodes } from './hooks/useSavedCodes';
 
+const BASE_PATH = '/client-scripts-online';
+
 function AppContent() {
   const { theme, toggle: toggleTheme } = useTheme();
   const location = useLocation();
@@ -184,10 +186,10 @@ function AppContent() {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={BASE_PATH}>
       <Routes>
         <Route path="/" element={<Navigate to={`/${LANGUAGES[0].id}`} replace />} />
-        <Route path=":langId" element={<AppContent />} />
+        <Route path="/:langId" element={<AppContent />} />
         <Route path="*" element={<Navigate to={`/${LANGUAGES[0].id}`} replace />} />
       </Routes>
     </BrowserRouter>

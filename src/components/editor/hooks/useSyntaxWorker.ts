@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { LANGUAGE_CONFIG } from '../config/languageConfig';
-
+// @ts-ignore
 import SyntaxWorker from '../workers/syntax-worker?worker';
 
 export interface Token {
@@ -12,15 +12,27 @@ export interface Token {
 export const useSyntaxWorker = (code: string, languageId: string) => {
   const [tokens, setTokens] = useState<Token[]>([]);
   const workerRef = useRef<Worker | null>(null);
-  const [isReady, setIsReady] = useState(false);
+
+  const [isWorkerReady, setIsWorkerReady] = useState(false);
+  const [isLangLoading, setIsLangLoading] = useState(false);
 
   useEffect(() => {
     workerRef.current = new SyntaxWorker();
     
     workerRef.current.onmessage = (e) => {
       const { type, tokens } = e.data;
-      if (type === 'READY') setIsReady(true);
-      if (type === 'TOKENS') setTokens(tokens);
+      
+      if (type === 'READY') {
+        setIsWorkerReady(true);
+      }
+      
+      if (type === 'LANG_LOADED') {
+        setIsLangLoading(false);
+      }
+      
+      if (type === 'TOKENS') {
+        setTokens(tokens);
+      }
     };
 
     workerRef.current.postMessage({ 
@@ -34,20 +46,22 @@ export const useSyntaxWorker = (code: string, languageId: string) => {
   }, []);
 
   useEffect(() => {
-    if (!isReady || !workerRef.current) return;
+    if (!isWorkerReady || !workerRef.current) return;
     
     const config = LANGUAGE_CONFIG[languageId];
     if (config) {
+      setIsLangLoading(true);
+      
       workerRef.current.postMessage({
         type: 'LOAD_LANG',
         langId: languageId,
         wasmUrl: config.wasmUrl
       });
     }
-  }, [languageId, isReady]);
+  }, [languageId, isWorkerReady]);
 
   useEffect(() => {
-    if (!isReady || !workerRef.current) return;
+    if (!isWorkerReady || !workerRef.current) return;
 
     const timeoutId = setTimeout(() => {
         workerRef.current?.postMessage({
@@ -58,7 +72,9 @@ export const useSyntaxWorker = (code: string, languageId: string) => {
     }, 50);
 
     return () => clearTimeout(timeoutId);
-  }, [code, languageId, isReady]);
+  }, [code, languageId, isWorkerReady]);
 
-  return tokens;
+  const isLoading = !isWorkerReady || isLangLoading;
+
+  return { tokens, isLoading };
 };

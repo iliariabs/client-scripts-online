@@ -9,6 +9,7 @@ import React, {
 import type { EditorRef } from '../../types/index';
 import { useSyntaxWorker } from './hooks/useSyntaxWorker';
 import { HighlightOverlay } from './HighlightOverlay';
+import { SyntaxLoadingOverlay } from '../layout/SyntaxLoadingOverlay';
 
 interface Props {
   value: string;
@@ -24,7 +25,7 @@ export const CodeEditor = forwardRef<EditorRef, Props>(({ value, onChange, theme
   const [minLines, setMinLines] = useState(1);
   const [currentLine, setCurrentLine] = useState(1);
 
-  const tokens = useSyntaxWorker(value, languageId);
+  const { tokens, isLoading } = useSyntaxWorker(value, languageId);
 
   const LINE_HEIGHT = 24;
   const PADDING_TOP = 12;
@@ -211,6 +212,8 @@ export const CodeEditor = forwardRef<EditorRef, Props>(({ value, onChange, theme
       ref={containerRef}
       className={`absolute inset-0 overflow-hidden ${themeStyles.bg}`}
     >
+      <SyntaxLoadingOverlay isLoading={isLoading} theme={theme}/>
+
       <div className="flex min-h-full min-w-max relative h-full">
         <div
           className={`flex-shrink-0 select-none text-right border-r h-full overflow-hidden ${themeStyles.gutter} ${themeStyles.gutterBorder}`}
